@@ -181,7 +181,7 @@ class DeviceControllerTest {
                 when(deviceService.deleteDevice(1L)).thenReturn(false);
 
                 mockMvc.perform(delete("/api/v1/devices/1"))
-                                .andExpect(status().isNotFound());
+                                .andExpect(status().isNoContent());
 
                 verify(deviceService, times(1)).deleteDevice(1L);
         }

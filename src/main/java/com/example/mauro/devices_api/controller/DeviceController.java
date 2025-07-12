@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.mauro.devices_api.dto.DeviceDTO;
 import com.example.mauro.devices_api.exception.ResourceAlreadyExistsException;
+import com.example.mauro.devices_api.exception.ResourceCannotBeDeletedException;
 import com.example.mauro.devices_api.model.Brand;
 import com.example.mauro.devices_api.model.Device;
 import com.example.mauro.devices_api.model.DeviceState;
@@ -104,6 +105,9 @@ public class DeviceController {
     }
 
     @Operation(summary = "Update a device by id", description = "Fully and/or partially update an existing device")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully updated"),
+    })
     @PutMapping("/{id}")
     public ResponseEntity<DeviceDTO> updateDevice(@PathVariable Long id, @Valid @RequestBody DeviceDTO deviceDTO) {
         Device updated = deviceService.updateDevice(id, deviceDTO);
@@ -111,9 +115,18 @@ public class DeviceController {
     }
 
     @Operation(summary = "Delete a device by id", description = "Delete a device by id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Deleted or not present"),
+            @ApiResponse(responseCode = "400", description = "Device is in use and cannot be deleted")
+    })
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDevice(@PathVariable Long id) {
-        deviceService.deleteDevice(id);
+        try {
+            deviceService.deleteDevice(id);
+        } catch (ResourceCannotBeDeletedException ex) {
+            return ResponseEntity.badRequest().build();
+        }
         return ResponseEntity.noContent().build();
     }
 

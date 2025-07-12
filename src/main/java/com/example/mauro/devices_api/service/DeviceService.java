@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.mauro.devices_api.dto.DeviceDTO;
 import com.example.mauro.devices_api.exception.ResourceAlreadyExistsException;
+import com.example.mauro.devices_api.exception.ResourceCannotBeDeletedException;
 import com.example.mauro.devices_api.model.Brand;
 import com.example.mauro.devices_api.model.Device;
 import com.example.mauro.devices_api.model.DeviceState;
@@ -79,7 +80,7 @@ public class DeviceService {
             }
             if (deviceDTO.getBrand() != null) {
                 Brand brand = brandRepository.findByName(deviceDTO.getBrand())
-                        .orElseGet(() -> brandRepository.save(existingDevice.getBrand()));
+                        .orElseGet(() -> brandRepository.save(Brand.builder().name(deviceDTO.getBrand()).build()));
                 existingDevice.setBrand(brand);
             }
 
@@ -91,8 +92,12 @@ public class DeviceService {
     }
 
     public boolean deleteDevice(Long id) {
-        if (!deviceRepository.existsById(id)) {
+        Device device = deviceRepository.findById(id).orElse(null);
+        if (device == null) {
             return false;
+        }
+        if (device.getState() == DeviceState.IN_USE) {
+            throw new ResourceCannotBeDeletedException("Device " + id + "is in use and cannot be deleted");
         }
         deviceRepository.deleteById(id);
         return true;

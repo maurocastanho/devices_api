@@ -18,6 +18,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -265,17 +266,22 @@ class DeviceServiceTest {
 
         Device result = deviceService.updateDevice(savedDevice.getId(), deviceDTO);
 
+        result = deviceService.getDeviceById(savedDevice.getId()).get();
+
         assertThat(result.getId()).isEqualTo(savedDevice.getId());
         assertThat(result.getName()).isEqualTo("Tablet");
         assertThat(result.getBrand().getName()).isEqualTo("Apple");
         assertThat(result.getState()).isEqualTo(DeviceState.IN_USE);
-        assertThat(result.getCreationTime()).isEqualTo(savedDevice.getCreationTime());
+        // Create ZoneId
+        ZoneOffset zone = ZoneOffset.of("Z");
+        // Compares using seconds because LocalDateTime loses some precision after it is saved and retrieved from the database
+        assertThat(result.getCreationTime().toEpochSecond(zone)).isEqualTo(savedDevice.getCreationTime().toEpochSecond(zone));
 
         Optional<Device> retrievedDevice = deviceRepository.findById(result.getId());
         assertThat(retrievedDevice).isPresent();
         assertThat(retrievedDevice.get().getName()).isEqualTo("Tablet");
         assertThat(retrievedDevice.get().getBrand().getName()).isEqualTo("Apple");
-        assertThat(retrievedDevice.get().getCreationTime()).isEqualTo(savedDevice.getCreationTime());
+        assertThat(retrievedDevice.get().getCreationTime().toEpochSecond(zone)).isEqualTo(savedDevice.getCreationTime().toEpochSecond(zone));
     }
 
     @Test
